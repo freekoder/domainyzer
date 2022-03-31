@@ -2,6 +2,9 @@ package com.vampbear.domainyzer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.*;
@@ -11,14 +14,41 @@ import java.util.stream.Collectors;
 
 public class Domainyzer {
 
-    private static final Pattern DOMAIN_PATTERN = Pattern.compile("^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\\\.)+[A-Za-z]{2,6}$");
+    private static final String DOMAIN_REGEXP =
+            "^((?!-)[A-Za-z0-9-]"
+                    + "{1,63}(?<!-)\\.)"
+                    + "+[A-Za-z]{2,6}";
+
+    private static final Pattern DOMAIN_PATTERN = Pattern.compile(DOMAIN_REGEXP);
 
     public List<String> fromDomain(String domain) {
-        Set<String> subdomains = getSubdomainsFromCRTSH(domain);
+        Set<String> subdomains = new HashSet<>();
+        subdomains.addAll(getSubdomainsFromCRTSH(domain));
         subdomains.addAll(getSubdomainsFromAlienVault(domain));
         subdomains.addAll(getSubdomainsFromFullHunt(domain));
+        subdomains.addAll(getSubdomainsFromRiddler(domain));
         List<String> list = new LinkedList<>(subdomains);
         return list.stream().sorted().collect(Collectors.toList());
+    }
+
+    private Collection<String> getSubdomainsFromRiddler(String domain) {
+        Set<String> subdomains = new HashSet<>();
+        HttpClient client = new HttpClient();
+        try {
+            String requestUrl = String.format("https://riddler.io/search?q=pld:%s&view_type=data_table", domain);
+            PageResponse response = client.getPageByUrl(requestUrl);
+            Document document = response.getDocument();
+            Elements elements = document.select("body > div.container-main > div > div > div:nth-child(2) > table > tbody > tr > td.col-lg-5.col-md-5.col-sm-5 > a:nth-child(2)");
+            for (Element element : elements) {
+                String elementContent = element.text();
+                if (elementContent.endsWith(domain) && isDomainName(elementContent)) {
+                    subdomains.add(elementContent);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return subdomains;
     }
 
     private Collection<String> getSubdomainsFromFullHunt(String domain) {
@@ -32,7 +62,7 @@ public class Domainyzer {
             for (Object item : hosts) {
                 if (item instanceof String) {
                     String hostname = (String) item;
-                    if (hostname.endsWith(domain) && isDomainName(domain)) {
+                    if (hostname.endsWith(domain) && isDomainName(hostname)) {
                         subdomains.add(hostname);
                     }
                 }
@@ -94,6 +124,6 @@ public class Domainyzer {
 
     private boolean isDomainName(String name) {
         Matcher matcher = DOMAIN_PATTERN.matcher(name);
-        return matcher.find();
+        return matcher.matches();
     }
 }
