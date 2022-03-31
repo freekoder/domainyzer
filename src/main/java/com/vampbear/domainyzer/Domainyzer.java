@@ -27,8 +27,31 @@ public class Domainyzer {
         subdomains.addAll(getSubdomainsFromAlienVault(domain));
         subdomains.addAll(getSubdomainsFromFullHunt(domain));
         subdomains.addAll(getSubdomainsFromRiddler(domain));
+        subdomains.addAll(getSubdomainsFromAnubis(domain));
         List<String> list = new LinkedList<>(subdomains);
         return list.stream().sorted().collect(Collectors.toList());
+    }
+
+    private Collection<String> getSubdomainsFromAnubis(String domain) {
+        Set<String> subdomains = new HashSet<>();
+        HttpClient client = new HttpClient();
+        try {
+            String requestUrl = String.format("https://jonlu.ca/anubis/subdomains/%s", domain);
+            PageResponse response = client.getPageByUrl(requestUrl);
+            JSONArray jsonResponse = new JSONArray(response.getOrigContent());
+            for (Object item : jsonResponse) {
+                if (item instanceof String) {
+                    String name = (String) item;
+                    if (name.endsWith(domain) && isDomainName(name)) {
+                        subdomains.add(name);
+                    }
+
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return subdomains;
     }
 
     private Collection<String> getSubdomainsFromRiddler(String domain) {
