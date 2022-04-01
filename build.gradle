@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'java-library'
+    id 'maven-publish'
 }
 
 group 'com.vampbear'
@@ -20,6 +21,18 @@ task fatJar(type: Jar) {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     with jar
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'com.vampbear'
+            artifactId = 'domainyzer'
+            version = '0.1'
+
+            from components.java
+        }
+    }
 }
 
 dependencies {
