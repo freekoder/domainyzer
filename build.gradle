@@ -5,12 +5,12 @@ plugins {
 }
 
 group 'com.vampbear'
-version '1.0-SNAPSHOT'
+version = '0.2'
 
 repositories {
     mavenCentral()
 }
-version = '1.0'
+
 
 task fatJar(type: Jar) {
     manifest {
@@ -28,8 +28,6 @@ publishing {
         maven(MavenPublication) {
             groupId = 'com.vampbear'
             artifactId = 'domainyzer'
-            version = '0.1'
-
             from components.java
         }
     }
