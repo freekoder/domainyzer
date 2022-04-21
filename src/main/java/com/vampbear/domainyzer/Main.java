@@ -1,16 +1,22 @@
 package com.vampbear.domainyzer;
 
-import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        String domain = "hackerone.com";
+        String domain = "gazprom.ru";
         System.out.println("Domainyzer");
+        System.out.println("Resolving domain: " + domain);
         Domainyzer domainyzer = new Domainyzer();
-        List<String> subdomains = domainyzer.fromDomain(domain);
-        for (String subdomain : subdomains) {
-            System.out.println(subdomain);
+        ReconResult result = domainyzer.fromDomain(domain);
+        for (Subdomain subdomain : result.getSubdomains()) {
+            System.out.println(subdomain.getSubdomain() + " " + subdomain.getSources());
         }
-        System.out.printf("Found %d subdomains for %s%n", subdomains.size(), domain);
+        System.out.println("Found " + result.getSubdomains().size() + " subdomains");
+        if (result.getErrors().size() > 0) {
+            System.out.println("Has errors:");
+            for (SourceError error : result.getErrors()) {
+                System.out.println("\tERROR: [" + error.getSourceName() + "] " + error.getErrorMessage());
+            }
+        }
     }
 }
