@@ -1,6 +1,7 @@
 package com.vampbear.domainyzer;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import com.vampbear.domainyzer.sources.*;
 
@@ -18,10 +19,20 @@ public class Domainyzer {
 
     public ReconResult fromDomain(String domain) {
         ReconResult result = new ReconResult();
+
+        ExecutorService executor = Executors.newFixedThreadPool(sources.size());
+        List<Future<SourceResult>> futuresList = new LinkedList<>();
+
         for (Source source : sources) {
-            SourceResult sourceResult = source.getSubdomains(domain);
-            result.enrichWith(sourceResult);
+            futuresList.add(executor.submit(() -> source.getSubdomains(domain)));
         }
+        for (Future<SourceResult> future : futuresList) {
+            try {
+                SourceResult sourceResult = future.get();
+                result.enrichWith(sourceResult);
+            } catch (InterruptedException | ExecutionException ignore) {}
+        }
+        executor.shutdown();
         return result;
     }
 }
