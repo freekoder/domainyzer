@@ -27,6 +27,7 @@ public abstract class AbstractSource implements Source {
             String sourceContent = getContentFromSource(getSourceUrlTemplate(), domain);
             List<String> candidates = extractSubdomains(sourceContent);
             for (String candidate : candidates) {
+                candidate = candidate.toLowerCase();
                 if (isDomainName(candidate) && candidate.endsWith(domain)) {
                     subdomains.add(candidate);
                 }
